@@ -197,6 +197,7 @@ type Bridge struct {
 func (b *Bridge) AssignHandlers(mux *Mux, gcs core.Core) {
 	b.coreint = gcs
 	mux.HandleFunc(prot.ComputeSystemCreateV1, b.createContainer)
+	mux.HandleFunc(prot.ComputeSystemStartV1, b.startContainer)
 	mux.HandleFunc(prot.ComputeSystemExecuteProcessV1, b.execProcess)
 	mux.HandleFunc(prot.ComputeSystemShutdownForcedV1, b.killContainer)
 	mux.HandleFunc(prot.ComputeSystemShutdownGracefulV1, b.shutdownContainer)
@@ -365,6 +366,20 @@ func (b *Bridge) createContainer(w ResponseWriter, r *Request) {
 		b.PublishNotification(notification)
 	}()
 
+	w.Write(response)
+}
+
+func (b *Bridge) startContainer(w ResponseWriter, r *Request) {
+	// This is just a noop, but needs to be handled so that an error isn't
+	// returned to the HCS.
+	var request prot.MessageBase
+	if err := commonutils.UnmarshalJSONWithHresult(r.Message, &request); err != nil {
+		w.Error("", errors.Wrapf(err, "failed to unmarshal JSON for message \"%s\"", r.Message))
+		return
+	}
+	response := &prot.MessageResponseBase{
+		ActivityID: request.ActivityID,
+	}
 	w.Write(response)
 }
 
